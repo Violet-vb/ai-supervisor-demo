@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI智能跟客 - 飞书Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --primary: #3370ff;
+  --primary-light: #e8f0ff;
+  --primary-dark: #245bdb;
+  --bg: #f5f6f7;
+  --sidebar-bg: #2b2f36;
+  --sidebar-text: #bbbfc4;
+  --sidebar-active: #ffffff;
+  --card-bg: #ffffff;
+  --text: #1f2329;
+  --text-secondary: #646a73;
+  --text-tertiary: #8f959e;
+  --border: #dee0e3;
+  --success: #34c724;
+  --warning: #ff7d00;
+  --danger: #f54a45;
+  --tag-red: #fff1f0;
+  --tag-red-text: #f54a45;
+  --tag-yellow: #fff7e6;
+  --tag-yellow-text: #ff7d00;
+  --tag-green: #e8ffea;
+  --tag-green-text: #34c724;
+  --tag-blue: #e8f0ff;
+  --tag-blue-text: #3370ff;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+/* Top Bar */
+.top-bar { height: 36px; background: var(--sidebar-bg); display: flex; align-items: center; padding: 0 12px; -webkit-app-region: drag; }
+.traffic-lights { display: flex; gap: 8px; }
+.traffic-light { width: 12px; height: 12px; border-radius: 50%; }
+.tl-red { background: #ff5f57; }
+.tl-yellow { background: #febc2e; }
+.tl-green { background: #28c840; }
+/* Main Layout */
+.main-layout { display: flex; flex: 1; overflow: hidden; }
+/* Left Sidebar */
+.sidebar { width: 64px; background: var(--sidebar-bg); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 4px; }
+.sidebar-item { width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; color: var(--sidebar-text); font-size: 10px; gap: 2px; transition: all 0.2s; position: relative; }
+.sidebar-item:hover { background: rgba(255,255,255,0.08); }
+.sidebar-item.active { color: var(--sidebar-active); background: rgba(255,255,255,0.12); }
+.sidebar-item .icon { font-size: 18px; }
+.sidebar-item .badge { position: absolute; top: 4px; right: 4px; background: var(--danger); color: #fff; font-size: 9px; min-width: 14px; height: 14px; border-radius: 7px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+/* Content Area */
+.content-area { flex: 1; display: flex; overflow: hidden; }
+/* Chat List Panel */
+.chat-list-panel { width: 260px; background: var(--card-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.chat-list-header { padding: 16px; font-size: 16px; font-weight: 600; color: var(--text); border-bottom: 1px solid var(--border); }
+.chat-list { flex: 1; overflow-y: auto; }
+.chat-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; transition: background 0.15s; gap: 10px; }
+.chat-item:hover { background: var(--bg); }
+.chat-item.active { background: var(--primary-light); }
+.chat-avatar { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.chat-avatar.bot { background: linear-gradient(135deg, #3370ff, #5b8def); color: #fff; }
+.chat-avatar.task { background: linear-gradient(135deg, #34c724, #5bd64e); color: #fff; }
+.chat-avatar.base { background: linear-gradient(135deg, #ff7d00, #ffab40); color: #fff; }
+.chat-avatar.wiki { background: linear-gradient(135deg, #7b61ff, #a78bfa); color: #fff; }
+.chat-avatar.dashboard { background: linear-gradient(135deg, #00b2b2, #4dd0e1); color: #fff; }
+.chat-info { flex: 1; min-width: 0; }
+.chat-name { font-size: 14px; color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-preview { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.chat-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.chat-time { font-size: 11px; color: var(--text-tertiary); }
+.chat-unread { background: var(--danger); color: #fff; font-size: 10px; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+/* Main Chat/Content Panel */
+.main-panel { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+.main-header { height: 56px; background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 12px; }
+.main-header-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.main-header-tag { background: var(--primary-light); color: var(--primary); font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+.main-body { flex: 1; overflow-y: auto; padding: 20px; }
+/* Step navigation */
+.step-nav { display: flex; gap: 4px; padding: 12px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.step-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: #fff; color: var(--text-secondary); font-size: 12px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.step-btn:hover { border-color: var(--primary); color: var(--primary); }
+.step-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* Message Bubbles */
+.message-group { margin-bottom: 20px; }
+.message-sender { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.message-sender-avatar { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: linear-gradient(135deg, #3370ff, #5b8def); color: #fff; }
+.message-sender-name { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.message-bubble { background: var(--card-bg); border-radius: 8px; padding: 16px; margin-left: 36px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); max-width: 680px; }
+.message-bubble h3 { font-size: 15px; color: var(--text); margin-bottom: 12px; font-weight: 600; }
+.message-bubble h4 { font-size: 13px; color: var(--text); margin: 12px 0 6px; font-weight: 600; }
+/* Cards inside messages */
+.client-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin: 8px 0; background: #fafbfc; }
+.client-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.client-card-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.client-card-stage { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+.stage-urgent { background: var(--tag-red); color: var(--tag-red-text); }
+.stage-warn { background: var(--tag-yellow); color: var(--tag-yellow-text); }
+.stage-normal { background: var(--tag-blue); color: var(--tag-blue-text); }
+.stage-done { background: var(--tag-green); color: var(--tag-green-text); }
+.client-card-signal { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
+.client-card-suggest { font-size: 12px; color: var(--primary); background: var(--primary-light); padding: 8px 10px; border-radius: 6px; line-height: 1.5; }
+.card-actions { display: flex; gap: 8px; margin-top: 10px; }
+.card-btn { padding: 5px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text-secondary); transition: all 0.15s; }
+.card-btn:hover { border-color: var(--primary); color: var(--primary); }
+.card-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.card-btn.primary:hover { background: var(--primary-dark); }
+/* Task list */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+.task-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+.task-checkbox { width: 16px; height: 16px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.task-checkbox.checked { background: var(--success); border-color: var(--success); color: #fff; font-size: 10px; }
+.task-content { flex: 1; }
+.task-title { font-size: 13px; color: var(--text); font-weight: 500; }
+.task-title.done { text-decoration: line-through; color: var(--text-tertiary); }
+.task-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; display: flex; gap: 8px; }
+.task-priority { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.task-priority.high { background: var(--danger); }
+.task-priority.medium { background: var(--warning); }
+.task-priority.low { background: var(--success); }
+/* Kanban */
+.kanban { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+.kanban-col { min-width: 220px; flex: 1; background: var(--bg); border-radius: 8px; padding: 12px; }
+.kanban-col-header { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.kanban-col-count { background: var(--border); color: var(--text-secondary); font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+.kanban-card { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: box-shadow 0.15s; }
+.kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.kanban-card-title { font-size: 12px; color: var(--text); font-weight: 500; margin-bottom: 4px; }
+.kanban-card-desc { font-size: 11px; color: var(--text-tertiary); }
+.kanban-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.kanban-card-tag { font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+/* Wiki / Knowledge Base */
+.wiki-tree { padding: 0; }
+.wiki-item { padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 6px; transition: background 0.15s; }
+.wiki-item:hover { background: var(--bg); }
+.wiki-item.active { background: var(--primary-light); }
+.wiki-item .icon { font-size: 14px; }
+.wiki-item .label { font-size: 13px; color: var(--text); }
+.wiki-detail { background: #fff; border-radius: 8px; padding: 20px; border: 1px solid var(--border); }
+.wiki-detail h2 { font-size: 18px; color: var(--text); margin-bottom: 4px; }
+.wiki-detail .meta { font-size: 12px; color: var(--text-tertiary); margin-bottom: 16px; display: flex; gap: 12px; }
+.wiki-detail .meta-tag { background: var(--tag-green); color: var(--tag-green-text); padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+.wiki-detail p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 10px; }
+.wiki-detail .steps { background: var(--bg); border-radius: 6px; padding: 12px 16px; margin: 12px 0; }
+.wiki-detail .steps li { font-size: 13px; color: var(--text); line-height: 2; }
+/* Dashboard */
+.dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.metric-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.metric-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 4px; }
+.metric-value { font-size: 22px; font-weight: 700; color: var(--text); }
+.metric-change { font-size: 11px; margin-top: 2px; }
+.metric-change.up { color: var(--success); }
+.metric-change.down { color: var(--danger); }
+.dashboard-section { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.dashboard-section h4 { font-size: 14px; color: var(--text); margin-bottom: 12px; font-weight: 600; }
+.insight-list { display: flex; flex-direction: column; gap: 8px; }
+.insight-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.insight-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 6px; }
+/* Rank table */
+.rank-table { width: 100%; border-collapse: collapse; }
+.rank-table th { font-size: 12px; color: var(--text-tertiary); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 500; }
+.rank-table td { font-size: 13px; color: var(--text); padding: 8px 10px; border-bottom: 1px solid var(--bg); }
+.rank-table tr:hover td { background: var(--bg); }
+/* Summary panel */
+.summary-section { background: #fff; border-radius: 8px; padding: 24px; border: 1px solid var(--border); }
+.summary-section h3 { font-size: 16px; margin-bottom: 16px; color: var(--text); }
+.value-flow { display: flex; align-items: center; gap: 12px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+.value-node { background: var(--primary-light); border: 1px solid var(--primary); border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 140px; }
+.value-node .title { font-size: 12px; color: var(--primary); font-weight: 600; }
+.value-node .desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.value-arrow { font-size: 18px; color: var(--primary); }
+.why-feishu { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.why-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; background: var(--bg); border-radius: 6px; }
+.why-item .check { color: var(--success); font-weight: 700; flex-shrink: 0; }
+.why-item .text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+/* Speech bubble for talk script */
+.speech-box { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 10px 0; position: relative; }
+.speech-box::before { content: ''; position: absolute; top: -6px; left: 20px; width: 10px; height: 10px; background: #fff; border-left: 1px solid var(--border); border-top: 1px solid var(--border); transform: rotate(45deg); }
+.speech-box p { font-size: 13px; color: var(--text); line-height: 1.7; }
+.speech-source { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+.speech-source .tag { background: var(--tag-green); color: var(--tag-green-text); padding: 1px 6px; border-radius: 3px; font-size: 10px; }
+/* Stats bar */
+.stats-bar { display: flex; gap: 16px; margin-top: 12px; padding: 10px 14px; background: var(--bg); border-radius: 6px; }
+.stat-item { font-size: 12px; color: var(--text-secondary); }
+.stat-item strong { color: var(--text); font-weight: 600; }
+/* Hide all panels by default */
+.panel { display: none; }
+.panel.active { display: block; }
+/* Responsive */
+@media (max-width: 1200px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) { .chat-list-panel { width: 200px; } .kanban-col { min-width: 180px; } }
+</style>
+</head>
+<body>
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="traffic-lights">
+    <div class="traffic-light tl-red"></div>
+    <div class="traffic-light tl-yellow"></div>
+    <div class="traffic-light tl-green"></div>
+  </div>
+</div>
+
+<div class="main-layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-item active" data-nav="msg"><div class="icon">💬</div><div>消息</div><div class="badge">5</div></div>
+    <div class="sidebar-item" data-nav="task"><div class="icon">✅</div><div>任务</div></div>
+    <div class="sidebar-item" data-nav="base"><div class="icon">📊</div><div>多维表格</div></div>
+    <div class="sidebar-item" data-nav="wiki"><div class="icon">📚</div><div>知识库</div></div>
+    <div class="sidebar-item" data-nav="dashboard"><div class="icon">📈</div><div>仪表盘</div></div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area">
+    <!-- Chat List -->
+    <div class="chat-list-panel">
+      <div class="chat-list-header">消息</div>
+      <div class="chat-list">
+        <div class="chat-item active" data-chat="bot">
+          <div class="chat-avatar bot">🤖</div>
+          <div class="chat-info"><div class="chat-name">AI智能跟客助手</div><div class="chat-preview">你今天有5位高优客户需要跟进</div></div>
+          <div class="chat-meta"><div class="chat-time">9:00</div><div class="chat-unread">3</div></div>
+        </div>
+        <div class="chat-item" data-chat="store">
+          <div class="chat-avatar" style="background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;">🏪</div>
+          <div class="chat-info"><div class="chat-name">北京朝阳店</div><div class="chat-preview">[店长] 本周业绩冲刺安排</div></div>
+          <div class="chat-meta"><div class="chat-time">8:42</div></div>
+        </div>
+        <div class="chat-item" data-chat="dashboard-msg">
+          <div class="chat-avatar dashboard">📊</div>
+          <div class="chat-info"><div class="chat-name">业务管理驾驶舱</div><div class="chat-preview">华北区AI跟客效果周报</div></div>
+          <div class="chat-meta"><div class="chat-time">周一</div><div class="chat-unread">1</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Panel -->
+    <div class="main-panel">
+      <!-- Step Navigation -->
+      <div class="step-nav">
+        <div class="step-btn active" data-step="1">Step1 AI推送跟客建议</div>
+        <div class="step-btn" data-step="2">Step2 话术推荐</div>
+        <div class="step-btn" data-step="3">Step3 飞书任务追踪</div>
+        <div class="step-btn" data-step="4">Step4 店长看板管理</div>
+        <div class="step-btn" data-step="5">Step5 策略知识库</div>
+        <div class="step-btn" data-step="6">Step6 效果看板</div>
+        <div class="step-btn" data-step="7">总结：飞书价值</div>
+      </div>
+
+      <div class="main-body">
+        <!-- Step 1: Bot Push -->
+        <div class="panel active" id="panel-1">
+          <div class="main-header" style="margin:-20px -20px 20px;padding:0 20px;border-bottom:1px solid var(--border);background:#fff;">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#3370ff,#5b8def);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;">🤖</div>
+            <div class="main-header-title">AI智能跟客助手</div>
+            <div class="main-header-tag">机器人</div>
+          </div>
+          <div class="message-group">
+            <div class="message-sender">
+              <div class="message-sender-avatar">🤖</div>
+              <div class="message-sender-name">AI智能跟客助手 · 今日 9:00</div>
+            </div>
+            <div class="message-bubble">
+              <h3>☀️ 小李，早上好！你今天有 5 位高优客户需要跟进</h3>
+              <h4>🔴 紧急（2位）</h4>
+              <div class="client-card">
+                <div class="client-card-header">
+                  <div class="client-card-name">👤 王女士</div>
+                  <div class="client-card-stage stage-urgent">已量房未确认</div>
+                </div>
+                <div class="client-card-signal">📡 信号：距上次联系已 <strong>9天</strong>，昨晚浏览了竞品「XX瓷砖」页面 3分钟</div>
+                <div class="client-card-suggest">💡 建议：发送同户型实景案例图，强调本周安装档期紧张，制造紧迫感</div>
+                <div class="card-actions">
+                  <div class="card-btn primary" onclick="switchStep(2)">📋 领取任务</div>
+                  <div class="card-btn" onclick="switchStep(2)">💬 查看话术</div>
+                  <div class="card-btn">⏰ 稍后提醒</div>
+                </div>
+              </div>
+              <div class="client-card">
+                <div class="client-card-header">
+                  <div class="client-card-name">👤 赵先生</div>
+                  <div class="client-card-stage stage-urgent">报价后沉默 12天</div>
+                </div>
+                <div class="client-card-signal">📡 信号：报价后 12天 未回复，但 <strong>3天前重新打开了报价单</strong>（停留2分钟）</div>
+                <div class="client-card-suggest">💡 建议：以「本月集采优惠即将截止」为由联系，附专属优惠价，限时3天</div>
+                <div class="card-actions">
+                  <div class="card-btn primary">📋 领取任务</div>
+                  <div class="card-btn">💬 查看话术</div>
+                  <div class="card-btn">⏰ 稍后提醒</div>
+                </div>
+              </div>
+              <h4>🟡 建议跟进（3位）</h4>
+              <div class="client-card" style="padding:10px 14px;">
+                <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
+                  · 刘先生 — 初次到店后3天，建议发送品牌案例册<br>
+                  · 马女士 — 已购瓷砖，AI预测卫浴需求概率 <strong style="color:var(--primary);">82%</strong> 🔥<br>
+                  · 陈先生 — 上周活动留资，建议邀约周末到店
+                </div>
+              </div>
+              <div class="stats-bar">
+                <div class="stat-item">📊 昨日数据：跟进 <strong>4位</strong></div>
+                <div class="stat-item">✅ 成功推进 <strong>2位</strong></div>
+                <div class="stat-item">🏆 <strong style="color:var(--success);">优于门店均值</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Talk Script -->
+        <div class="panel" id="panel-2">
+          <div class="main-header" style="margin:-20px -20px 20px;padding:0 20px;border-bottom:1px solid var(--border);background:#fff;">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#3370ff,#5b8def);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;">🤖</div>
+            <div class="main-header-title">AI智能跟客助手</div>
+            <div class="main-header-tag">话术推荐</div>
+          </div>
+          <div class="message-group">
+            <div class="message-sender">
+              <div class="message-sender-avatar">🤖</div>
+              <div class="message-sender-name">AI智能跟客助手 · 今日 9:02</div>
+            </div>
+            <div class="message-bubble">
+              <h3>💬 跟进话术推荐 — 王女士</h3>
+              <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:12px;">客户阶段：已量房未确认方案 | 客户类型：品质导向型 | 决策天数：第22天</div>
+              <div class="speech-box">
+                <p>王姐您好～上次您家量房的方案我们设计师做了两版调整，特别是您提到的卫生间干湿分离，有个新的布局想给您看看。</p>
+                <p style="margin-top:8px;">另外跟您说一下，这周刚好有一户跟您家差不多户型的客户交付了，实景效果特别好，我发您几张照片参考一下？您看这周六下午方便过来看看实际效果吗？</p>
+                <div class="speech-source">
+                  <div class="tag">✅ 已验证策略</div>
+                  策略来源：「量房后黄金72小时跟进法」· 历史转化率比常规高 25%
+                </div>
+              </div>
+              <div class="card-actions">
+                <div class="card-btn primary">📋 复制话术</div>
+                <div class="card-btn">✏️ 编辑后复制</div>
+                <div class="card-btn">🔄 换一种风格</div>
+              </div>
+              <h4 style="margin-top:16px;">📎 推荐素材</h4>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;">📷 同户型实景案例（3张）<span style="color:var(--primary);font-size:11px;">一键发送</span></div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;">📄 调整后方案预览PDF <span style="color:var(--primary);font-size:11px;">一键发送</span></div>
+              </div>
+              <h4 style="margin-top:16px;">🎯 跟进要点提醒</h4>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;margin-top:6px;padding:10px;background:var(--bg);border-radius:6px;">
+                · 王女士上次提到预算在 <strong>3-5万</strong>，当前方案报价 4.2万，在范围内<br>
+                · 她对 <strong>干湿分离</strong> 和 <strong>收纳空间</strong> 最关注<br>
+                · 老公可能是最终决策人，建议邀请一起到店<br>
+                · ⚠️ 竞品风险：昨晚浏览了「XX瓷砖」官网，可能在比价
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Task -->
+        <div class="panel" id="panel-3">
+          <div class="main-header" style="margin:-20px -20px 20px;padding:0 20px;border-bottom:1px solid var(--border);background:#fff;">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#34c724,#5bd64e);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;">✅</div>
+            <div class="main-header-title">我的任务</div>
+            <div style="margin-left:auto;font-size:12px;color:var(--text-tertiary);">导购：小李 | 北京朝阳店</div>
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">今日待办（5）</div>
+          <div class="task-list">
+            <div class="task-item">
+              <div class="task-priority high"></div>
+              <div class="task-checkbox"></div>
+              <div class="task-content">
+                <div class="task-title">跟进王女士 - 量房方案确认推进</div>
+                <div class="task-meta"><span>📅 今日 18:00</span><span>🏷️ #高优 #流失风险</span><span>📌 来源：AI智能跟客</span></div>
+              </div>
+            </div>
+            <div class="task-item">
+              <div class="task-priority high"></div>
+              <div class="task-checkbox"></div>
+              <div class="task-content">
+                <div class="task-title">跟进赵先生 - 报价后沉默挽回</div>
+                <div class="task-meta"><span>📅 今日 18:00</span><span>🏷️ #高优 #报价阶段 #卫浴</span><span>📌 来源：AI智能跟客</span></div>
+              </div>
+            </div>
+            <div class="task-item">
+              <div class="task-priority medium"></div>
+              <div class="task-checkbox"></div>
+              <div class="task-content">
+                <div class="task-title">联系刘先生 - 初次到店后首次触达</div>
+                <div class="task-meta"><span>📅 明日 12:00</span><span>🏷️ #常规 #初次到店 #全屋定制</span><span>📌 来源：AI智能跟客</span></div>
+              </div>
+            </div>
+            <div class="task-item">
+              <div class="task-priority medium"></div>
+              <div class="task-checkbox"></div>
+              <div class="task-content">
+                <div class="task-title">推荐卫浴套餐给马女士 - 跨品类连带</div>
+                <div class="task-meta"><span>📅 本周五</span><span>🏷️ #连带机会 #已购瓷砖→卫浴</span><span>📌 来源：AI跨品类推荐</span></div>
+              </div>
+            </div>
+            <div class="task-item">
+              <div class="task-priority low"></div>
+              <div class="task-checkbox checked">✓</div>
+              <div class="task-content">
+                <div class="task-title done">回访陈先生 - 活动留资邀约到店</div>
+                <div class="task-meta"><span style="color:var(--success);">✅ 已完成</span><span>结果：已约周六到店</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:20px;padding:14px;background:var(--primary-light);border-radius:8px;font-size:12px;color:var(--primary);line-height:1.6;">
+            💡 <strong>AI提示：</strong>王女士和赵先生今天是最后跟进窗口期，建议上午联系（历史数据显示上午10-11点接通率最高）。马女士的卫浴需求如果本周不跟进，预计下周流失概率将从18%升至45%。
+          </div>
+        </div>
+
+        <!-- Step 4: Kanban -->
+        <div class="panel" id="panel-4">
+          <div class="main-header" style="margin:-20px -20px 20px;padding:0 20px;border-bottom:1px solid var(--border);background:#fff;">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#ff7d00,#ffab40);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;">📊</div>
+            <div class="main-header-title">北京朝阳店 - 跟客任务管理</div>
+            <div class="main-header-tag">多维表格 · 看板视图</div>
+          </div>
+          <div class="kanban">
+            <div class="kanban-col">
+              <div class="kanban-col-header">待领取 <span class="kanban-col-count">3</span></div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">张三 → 刘女士</div>
+                <div class="kanban-card-desc">初次到店跟进</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-red);color:var(--tag-red-text);">⚠️ 逾期1天</span><span style="font-size:10px;color:var(--text-tertiary);">全屋定制</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小王 → 吴先生</div>
+                <div class="kanban-card-desc">跨品类连带推荐</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-red);color:var(--tag-red-text);">⚠️ 逾期2天</span><span style="font-size:10px;color:var(--text-tertiary);">卫浴</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">张三 → 孙先生</div>
+                <div class="kanban-card-desc">活动留资回访</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-yellow);color:var(--tag-yellow-text);">今日截止</span><span style="font-size:10px;color:var(--text-tertiary);">瓷砖</span></div>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header">进行中 <span class="kanban-col-count">4</span></div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小李 → 王女士</div>
+                <div class="kanban-card-desc">量房方案确认推进</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-blue);color:var(--tag-blue-text);">进行中</span><span style="font-size:10px;color:var(--text-tertiary);">瓷砖</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小李 → 赵先生</div>
+                <div class="kanban-card-desc">报价沉默挽回</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-blue);color:var(--tag-blue-text);">进行中</span><span style="font-size:10px;color:var(--text-tertiary);">卫浴</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小王 → 李先生</div>
+                <div class="kanban-card-desc">二次到店邀约</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-blue);color:var(--tag-blue-text);">进行中</span><span style="font-size:10px;color:var(--text-tertiary);">全屋定制</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">张三 → 周女士</div>
+                <div class="kanban-card-desc">流失预警挽回</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-blue);color:var(--tag-blue-text);">进行中</span><span style="font-size:10px;color:var(--text-tertiary);">瓷砖</span></div>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header">已完成 <span class="kanban-col-count">6</span></div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小李 → 陈先生</div>
+                <div class="kanban-card-desc">邀约到店</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-green);color:var(--tag-green-text);">✅ 已约周六</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小王 → 马女士</div>
+                <div class="kanban-card-desc">发送案例册</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-green);color:var(--tag-green-text);">✅ 客户已查看</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">张三 → 何先生</div>
+                <div class="kanban-card-desc">报价跟进</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-green);color:var(--tag-green-text);">✅ 确认下单</span></div>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-header">已成交 <span class="kanban-col-count">3</span></div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小王 → 周先生</div>
+                <div class="kanban-card-desc">瓷砖全款下单</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-green);color:var(--tag-green-text);">💰 ¥4.8万</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">小李 → 孙女士</div>
+                <div class="kanban-card-desc">卫浴+瓷砖套餐</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-green);color:var(--tag-green-text);">💰 ¥7.2万</span></div>
+              </div>
+              <div class="kanban-card">
+                <div class="kanban-card-title">张三 → 林先生</div>
+                <div class="kanban-card-desc">全屋定制签约</div>
+                <div class="kanban-card-footer"><span class="kanban-card-tag" style="background:var(--tag-green);color:var(--tag-green-text);">💰 ¥12.6万</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:12px;color:var(--text-secondary);">⚠️ <strong>提醒：</strong>张三有 2 条任务逾期，小王有 1 条任务逾期</div>
+            <div class="card-btn primary" style="font-size:11px;">一键@相关导购</div>
+          </div>
+        </div>
+
+        <!-- Step 5: Wiki -->
+        <div class="panel" id="panel-5">
+          <div class="main-header" style="margin:-20px -20px 20px;padding:0 20px;border-bottom:1px solid var(--border);background:#fff;">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#7b61ff,#a78bfa);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;">📚</div>
+            <div class="main-header-title">门店跟客策略库</div>
+            <div class="main-header-tag">知识库</div>
+          </div>
+          <div style="display:flex;gap:16px;">
+            <div style="width:220px;flex-shrink:0;">
+              <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:8px;padding:0 8px;">按客户阶段</div>
+              <div class="wiki-tree">
+                <div class="wiki-item"><span class="icon">📁</span><span class="label">初次到店</span></div>
+                <div class="wiki-item active"><span class="icon">📁</span><span class="label">已量房</span></div>
+                <div class="wiki-item" style="padding-left:28px;"><span class="icon">⭐</span><span class="label" style="color:var(--primary);">量房后黄金72小时跟进法</span></div>
+                <div class="wiki-item"><span class="icon">📁</span><span class="label">已报价</span></div>
+                <div class="wiki-item" style="padding-left:28px;"><span class="icon">⭐</span><span class="label">报价沉默客户激活三步法</span></div>
+                <div class="wiki-item"><span class="icon">📁</span><span class="label">在比价</span></div>
+                <div class="wiki-item"><span class="icon">📁</span><span class="label">已成交-连带</span></div>
+                <div class="wiki-item" style="padding-left:28px;"><span class="icon">⭐</span><span class="label">瓷砖→卫浴跨品类连带话术</span></div>
+              </div>
+            </div>
+            <div style="flex:1;">
+              <div class="wiki-detail">
+                <h2>⭐ 量房后黄金72小时跟进法</h2>
+                <div class="meta">
+                  <div class="meta-tag">✅ 已验证</div>
+                  <span>验证时间：2026.05</span>
+                  <span>来源：北京朝阳店 · 导购小李</span>
+                  <span>样本量：42组</span>
+                </div>
+                <p><strong>策略概述：</strong>量房完成后的72小时内是客户决策的黄金窗口期。此时客户对自家户型问题感知最强烈、改造意愿最高。超过72小时后客户热度迅速衰减，流失概率提升40%。</p>
+                <p><strong>核心发现：</strong>导购小李对量房后客户在第3天发送同户型实景案例对比图，转化率比团队平均高 <strong style="color:var(--success);">25%</strong>。经A/B测试验证（实验组32人 vs 对照组30人），统计显著。</p>
+                <h4 style="margin-top:14px;">执行步骤</h4>
+                <div class="steps">
+                  <ol>
+                    <li><strong>Day 1</strong>（量房次日）：发送同户型实景案例对比图（before/after）</li>
+                    <li><strong>Day 2</strong>：发送设计师手绘的初步布局草图，制造期待感</li>
+                    <li><strong>Day 3</strong>：以「本周安装档期紧张」为由，邀约二次到店确认方案</li>
+                  </ol>
+                </div>
+                <h4>适用条件</h4>
+                <p>· 客户已完成量房<br>· 意向品类：瓷砖/卫浴/全屋定制<br>· 客户类型：品质导向型 或 犹豫拖延型</p>
+                <h4>不适用情况</h4>
+                <p>· 客户明确表示3个月后才装修<br>· 纯比价型客户（建议转「报价沉默激活」策略）</p>
+                <div class="stats-bar" style="margin-top:14px;">
+                  <div class="stat-item">👍 <strong>42人</strong> 使用</div>
+                  <div class="stat-item">📈 转化率 <strong>+25%</strong></div>
+                  <div class="stat-item">💬 <strong>12条</strong> 导购反馈</div>
+                  <div class="stat-item">🔄 最近更新：3天前</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 6: Dashboard -->
+        <div class="panel" id="panel-6">
+          <div class="main-header" style="margin:-20px -20px 20px;padding:0 20px;border-bottom:1px solid var(--border);background:#fff;">
+            <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#00b2b2,#4dd0e1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;">📈</div>
+            <div class="main-header-title">AI跟客效果驾驶舱</div>
+            <div class="main-header-tag">华北区 · 本周</div>
+          </div>
+          <div class="dashboard-grid">
+            <div class="metric-card">
+              <div class="metric-label">跟进覆盖率</div>
+              <div class="metric-value">87%</div>
+              <div class="metric-change up">↑ 12% vs 上周</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">客户流失率</div>
+              <div class="metric-value">8%</div>
+              <div class="metric-change up">↓ 5% vs 上月</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">AI建议采纳率</div>
+              <div class="metric-value">73%</div>
+              <div class="metric-change up">↑ 8% vs 首周</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">AI归因增量GMV</div>
+              <div class="metric-value">¥186万</div>
+              <div class="metric-change up">本周通过AI建议成交</div>
+            </div>
+          </div>
+          <div class="dashboard-section">
+            <h4>🔍 洞察与建议</h4>
+            <div class="insight-list">
+              <div class="insight-item"><div class="insight-dot"></div><div>「报价沉默激活策略」本周转化率达 <strong>31%</strong>，建议全区推广</div></div>
+              <div class="insight-item"><div class="insight-dot" style="background:var(--warning);"></div><div>石家庄门店跟进率连续2周低于60%，建议重点关注</div></div>
+              <div class="insight-item"><div class="insight-dot"></div><div>跨品类连带率提升显著：瓷砖→卫浴连带率从 8% 升至 <strong>19%</strong></div></div>
+              <div class="insight-item"><div class="insight-dot" style="background:var(--success);"></div><div>新策略发现：天津店导购赵XX的「旧房痛点唤醒法」待验证，已进入A/B测试池</div></div>
+            </div>
+          </div>
+          <div class="dashboard-section">
+            <h4>🏆 门店排名 TOP5</h4>
+            <table class="rank-table">
+              <thead><tr><th>排名</th><th>门店</th><th>转化率</th><th>AI采纳率</th><th>本周GMV</th><th>趋势</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>北京朝阳店</td><td><strong>28%</strong></td><td>81%</td><td>¥52万</td><td style="color:var(--success);">⬆️</td></tr>
+                <tr><td>2</td><td>天津河西店</td><td><strong>25%</strong></td><td>76%</td><td>¥45万</td><td style="color:var(--success);">⬆️</td></tr>
+                <tr><td>3</td><td>北京望京店</td><td><strong>23%</strong></td><td>72%</td><td>¥41万</td><td>➡️</td></tr>
+                <tr><td>4</td><td>石家庄裕华店</td><td><strong>19%</strong></td><td>58%</td><td>¥33万</td><td style="color:var(--success);">⬆️</td></tr>
+                <tr><td>5</td><td>济南历下店</td><td><strong>18%</strong></td><td>69%</td><td>¥30万</td><td style="color:var(--danger);">⬇️</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Step 7: Summary -->
+        <div class="panel" id="panel-7">
+          <div class="summary-section">
+            <h3 style="text-align:center;">飞书 = AI智能跟客的「经营操作系统」</h3>
+            <div class="value-flow">
+              <div class="value-node"><div class="title">💬 消息Bot</div><div class="desc">AI洞察触达<br>话术推荐</div></div>
+              <div class="value-arrow">→</div>
+              <div class="value-node"><div class="title">✅ 飞书任务</div><div class="desc">分配到人<br>执行追踪</div></div>
+              <div class="value-arrow">→</div>
+              <div class="value-node"><div class="title">📊 多维表格</div><div class="desc">看板管理<br>数据结构化</div></div>
+              <div class="value-arrow">→</div>
+              <div class="value-node"><div class="title">📚 知识库</div><div class="desc">策略沉淀<br>组织智慧</div></div>
+              <div class="value-arrow">→</div>
+              <div class="value-node"><div class="title">📈 仪表盘</div><div class="desc">效果度量<br>决策支撑</div></div>
+            </div>
+            <div style="text-align:center;margin:16px 0;font-size:13px;color:var(--primary);font-weight:600;">⟳ 数据闭环：用得越多 → AI越准 → 策略库越丰富 → 效果越好</div>
+            <h4 style="margin-top:24px;margin-bottom:12px;">为什么是飞书？</h4>
+            <div class="why-feishu">
+              <div class="why-item"><span class="check">✅</span><span class="text"><strong>零学习成本</strong><br>导购每天已在用飞书，无需额外安装任何App</span></div>
+              <div class="why-item"><span class="check">✅</span><span class="text"><strong>开箱即用工具链</strong><br>Bot+任务+多维表格+知识库+仪表盘，全部原生集成</span></div>
+              <div class="why-item"><span class="check">✅</span><span class="text"><strong>AI建议→可执行任务</strong><br>不是"看了就忘"的报告，而是分配到人的待办</span></div>
+              <div class="why-item"><span class="check">✅</span><span class="text"><strong>全角色统一平台</strong><br>导购、店长、大区经理、CEO都在同一平台协作</span></div>
+              <div class="why-item"><span class="check">✅</span><span class="text"><strong>不替换现有系统</strong><br>通过API与智蚁系统、企业微信打通，增强而非替代</span></div>
+              <div class="why-item"><span class="check">✅</span><span class="text"><strong>策略自动沉淀</strong><br>有效打法自动入库，组织智慧不因人员流动丢失</span></div>
+            </div>
+            <div style="margin-top:24px;padding:16px;background:var(--bg);border-radius:8px;text-align:center;">
+              <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:4px;">vs 竞品方案</div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.8;">
+                ❌ 独立CRM → 导购要多开一个App，落地率低<br>
+                ❌ 纯BI看板 → 只有分析没有执行闭环<br>
+                ❌ 纯企微SCRM → 缺乏任务管理和知识沉淀能力<br>
+                <strong style="color:var(--primary);">✅ 飞书 → 唯一能在一个平台上完成「洞察→执行→沉淀→度量」全闭环的方案</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Step navigation
+function switchStep(n) {
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.step-btn[data-step="${n}"]`).classList.add('active');
+  document.getElementById(`panel-${n}`).classList.add('active');
+
+  // Update sidebar active state
+  const sidebarMap = {1:'msg',2:'msg',3:'task',4:'base',5:'wiki',6:'dashboard',7:'msg'};
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  const target = document.querySelector(`.sidebar-item[data-nav="${sidebarMap[n]}"]`);
+  if(target) target.classList.add('active');
+}
+
+document.querySelectorAll('.step-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchStep(parseInt(btn.dataset.step)));
+});
+
+// Sidebar navigation
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const nav = item.dataset.nav;
+    const navMap = {msg:1, task:3, base:4, wiki:5, dashboard:6};
+    if(navMap[nav]) switchStep(navMap[nav]);
+  });
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  const current = parseInt(document.querySelector('.step-btn.active').dataset.step);
+  if(e.key === 'ArrowRight' && current < 7) switchStep(current + 1);
+  if(e.key === 'ArrowLeft' && current > 1) switchStep(current - 1);
+});
+</script>
+</body>
+</html>
